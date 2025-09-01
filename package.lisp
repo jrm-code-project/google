@@ -1,0 +1,20 @@
+;;; -*- Lisp -*-
+
+(defpackage "GOOGLE"
+  (:shadowing-import-from "FUNCTION" "COMPOSE")
+  (:shadowing-import-from "JSONX" "WITH-DECODER-JRM-SEMANTICS")
+  (:shadowing-import-from "NAMED-LET" "LET" "NAMED-LAMBDA")
+  (:shadowing-import-from "SERIES" "DEFUN" "FUNCALL" "LET*" "MULTIPLE-VALUE-BIND")
+  (:use "ALEXANDRIA" "CL" "FOLD" "FUNCTION" "NAMED-LET" "PROMISE" "SERIES")
+  (:export
+   "DEFAULT-PROJECT"
+   "GEMINI-API-KEY"
+   "GOOGLE-GET"
+   "GOOGLE-POST"
+   "GOOGLE-SEARCH-ENGINE-ID"
+   "HYPERSPEC-SEARCH"
+   "HYPERSPEC-SEARCH-ENGINE-ID"
+   "SCAN-BLOGGER-POSTS"
+   "SEARCH-ENGINE-API-KEY"
+   "WEB-SEARCH"
+   ))
