@@ -70,40 +70,18 @@
    typically located in the user's XDG config directory."
   (uiop/configuration:xdg-config-pathname "googleapis/"))
 
-(defun default-apikey-pathname ()
-  "Returns the default pathname for the API key file within the
-   Google APIs configuration directory."
-  (merge-pathnames "apikey" (googleapis-pathname)))
+(macrolet ((define-default-pathname (name file)
+             `(DEFUN ,name ()
+                (MERGE-PATHNAMES ,file (GOOGLEAPIS-PATHNAME)))))
 
-(defun default-project-pathname ()
-  "Returns the default pathname for the default project file within the
-   Google APIs configuration directory."
-  (merge-pathnames "default-project" (googleapis-pathname)))
-
-(defun default-blogger-apikey-pathname ()
-  "Returns the default pathname for the Google Custom Search Engine API key file
-   within the Google APIs configuration directory."
-  (merge-pathnames "blogger-apikey" (googleapis-pathname)))
-
-(defun default-blogger-blog-id-pathname ()
-  "Returns the default pathname for the Google Custom Search Engine ID file
-   within the Google APIs configuration directory."
-  (merge-pathnames "blog-id" (googleapis-pathname)))
-
-(defun default-custom-search-engine-apikey-pathname ()
-  "Returns the default pathname for the Google Custom Search Engine API key file
-   within the Google APIs configuration directory."
-  (merge-pathnames "cse-apikey" (googleapis-pathname)))
-
-(defun default-custom-search-engine-id-pathname ()
-  "Returns the default pathname for the Google Custom Search Engine ID file
-   within the Google APIs configuration directory."
-  (merge-pathnames "cse-id" (googleapis-pathname)))
-
-(defun default-hyperspec-custom-search-engine-id-pathname ()
-  "Returns the default pathname for the Google Custom Search Engine ID file
-   within the Google APIs configuration directory."
-  (merge-pathnames "hyperspec-id" (googleapis-pathname)))
+  ;; Define functions to get the default pathnames for various configuration files.
+  (define-default-pathname default-blogger-apikey-pathname "blogger-apikey")
+  (define-default-pathname default-blogger-blog-id-pathname "blog-id")
+  (define-default-pathname default-custom-search-engine-apikey-pathname "cse-apikey")
+  (define-default-pathname default-custom-search-engine-id-pathname "cse-id")
+  (define-default-pathname default-gemini-apikey-pathname "gemini-apikey")
+  (define-default-pathname default-hyperspec-custom-search-engine-id-pathname "hyperspec-id")
+  (define-default-pathname default-project-pathname "default-project"))
 
 (defun default-project ()
   "Reads and returns the default Google Cloud project name from its
@@ -116,199 +94,79 @@
           (when line
             (str:trim line)))))))
 
-(defun project-apikey-pathname (project)
-  "Constructs the pathname for the API key file specific to a given
-   Google Cloud PROJECT within the Google APIs configuration directory."
-  (merge-pathnames (make-pathname :directory (list :relative project)
-                                  :name "apikey")
-                   (googleapis-pathname)))
+(macrolet ((define-project-service-pathname (service)
+             `(DEFUN ,(intern (concatenate 'string "PROJECT-" (symbol-name service) "-PATHNAME")
+                              (find-package "GOOGLE"))
+                  (PROJECT)
+                (MERGE-PATHNAMES (MAKE-PATHNAME :DIRECTORY
+                                                (LIST :RELATIVE PROJECT
+                                                      ,(str:join ""
+                                                                (map 'list
+                                                                     #'str:capitalize
+                                                                     (str:split "-" (symbol-name service))))))
+                                 (GOOGLEAPIS-PATHNAME)))))
 
-(defun project-blogger-pathname (project)
-  "Constructs the pathname for the Blogger configuration
-   directory specific to a given Google Cloud PROJECT within the
-   Google APIs configuration directory."
-  (merge-pathnames (make-pathname :directory (list :relative project "Blogger"))
-                   (googleapis-pathname)))
+  ;; Define functions to get the pathnames for various services within a project.
+  (define-project-service-pathname :blogger)
+  (define-project-service-pathname :custom-search-engine)
+  (define-project-service-pathname :gemini))
 
-(defun project-cse-pathname (project)
-  "Constructs the pathname for the Custom Search Engine configuration
-   directory specific to a given Google Cloud PROJECT within the
-   Google APIs configuration directory."
-  (merge-pathnames (make-pathname :directory (list :relative project "CustomSearchEngine"))
-                   (googleapis-pathname)))
+(macrolet ((define-project-service-config (service file)
+             `(DEFUN ,(intern (concatenate 'string "PROJECT-"
+                                           (symbol-name service)
+                                           "-"
+                                           (string-upcase file)
+                                           "-PATHNAME")
+                              (find-package "GOOGLE"))
+                  (PROJECT)
+                (MERGE-PATHNAMES ,file (,(intern (concatenate 'string "PROJECT-" (symbol-name service) "-PATHNAME")
+                                                 (find-package "GOOGLE"))
+                                        PROJECT)))))
 
-(defun project-blogger-apikey-pathname (project)
-  "Constructs the pathname for the Blogger API key file
-   specific to a given Google Cloud PROJECT within the Google APIs
-   configuration directory."
-  (merge-pathnames (project-blogger-pathname project) "apikey"))
+  ;; Define functions to get the pathnames for various configuration files within a project.
+  (define-project-service-config :blogger "apikey")
+  (define-project-service-config :blogger "blog-id")
+  (define-project-service-config :custom-search-engine "apikey")
+  (define-project-service-config :custom-search-engine "id")
+  (define-project-service-config :gemini "apikey")
+  (define-project-service-config :custom-search-engine "hyperspec-id"))
 
-(defun project-blogger-blog-id-pathname (project)
-  "Constructs the pathname for the Blogger API key file
-   specific to a given Google Cloud PROJECT within the Google APIs
-   configuration directory."
-  (merge-pathnames (project-blogger-pathname project) "blog-id"))
+(macrolet ((define-effective-pathname (name)
+             `(DEFUN ,name ()
+                (OR (LET ((PROJECT (DEFAULT-PROJECT)))
+                      (WHEN PROJECT
+                        (PROBE-FILE (,(intern (concatenate 'string "PROJECT-" (symbol-name name))
+                                              (find-package "GOOGLE"))
+                                     PROJECT))))
+                    (PROBE-FILE (,(intern (concatenate 'string "DEFAULT-" (symbol-name name))
+                                          (find-package "GOOGLE"))))))))
 
-(defun project-custom-search-engine-apikey-pathname (project)
-  "Constructs the pathname for the Custom Search Engine API key file
-   specific to a given Google Cloud PROJECT within the Google APIs
-   configuration directory."
-  (merge-pathnames (project-cse-pathname project) "apikey"))
+  ;; Define functions to get the effective pathnames for various keys and IDs.
+  (define-effective-pathname blogger-apikey-pathname)
+  (define-effective-pathname blogger-blog-id-pathname)
+  (define-effective-pathname custom-search-engine-apikey-pathname)
+  (define-effective-pathname custom-search-engine-id-pathname)
+  (define-effective-pathname gemini-apikey-pathname)
+  (define-effective-pathname hyperspec-custom-search-engine-id-pathname))
 
-(defun project-custom-search-engine-id-pathname (project)
-  "Constructs the pathname for the Custom Search Engine ID file
-   specific to a given Google Cloud PROJECT within the Google APIs
-   configuration directory."
-  (merge-pathnames (project-cse-pathname project) "id"))
+(macrolet ((define-configuration (name effective-pathname environment-varible)
+             `(DEFUN ,name ()
+                (OR (LET ((PATHNAME (,effective-pathname)))
+                      (AND PATHNAME
+                           (WITH-OPEN-FILE (STREAM PATHNAME :DIRECTION :INPUT)
+                             (LET ((LINE (READ-LINE STREAM NIL)))
+                               (WHEN LINE
+                                 (STR:TRIM LINE))))))
+                    (UIOP:GETENV ,environment-varible)
+                    (ERROR "No ~a found.  Set the environment variable ~a or create file at ~a."
+                           ,(string-upcase (symbol-name name))
+                           ,environment-varible
+                           (NAMESTRING (,effective-pathname)))))))
 
-(defun project-hyperspec-custom-search-engine-id-pathname (project)
-  "Constructs the pathname for the Hyperspec Search Engine ID file
-   specific to a given Google Cloud PROJECT within the Google APIs
-   configuration directory."
-  (merge-pathnames (project-cse-pathname project) "hyperspec-id"))
-
-(defun apikey-pathname ()
-  "Determines the effective pathname for the Google API key.
-   It first checks for a project-specific API key (if a default project
-   is set), then falls back to the default API key pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-apikey-pathname project))))
-      (probe-file (default-apikey-pathname))))
-
-(defun blogger-apikey-pathname ()
-  "Determines the effective pathname for the Blogger API key.
-   It first checks for a project-specific API key (if a default project
-   is set), then falls back to the default API key pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-blogger-apikey-pathname project))))
-      (probe-file (default-blogger-apikey-pathname))))
-
-(defun blogger-blog-id-pathname ()
-  "Determines the effective pathname for the Blogger Blog Id key.
-   It first checks for a project-specific Blog Id (if a default project
-   is set), then falls back to the default Blog Id pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-blogger-blog-id-pathname project))))
-      (probe-file (default-blogger-blog-id-pathname))))
-
-(defun custom-search-engine-apikey-pathname ()
-  "Determines the effective pathname for the Google API key.
-   It first checks for a project-specific API key (if a default project
-   is set), then falls back to the default API key pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-custom-search-engine-apikey-pathname project))))
-      (probe-file (default-custom-search-engine-apikey-pathname))))
-
-(defun custom-search-engine-id-pathname ()
-  "Determines the effective pathname for the Google Custom Search Engine ID.
-   It first checks for a project-specific ID (if a default project
-   is set), then falls back to the default ID pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-custom-search-engine-id-pathname project))))
-      (probe-file (default-custom-search-engine-id-pathname))))
-
-(defun hyperspec-custom-search-engine-id-pathname ()
-  "Determines the effective pathname for the Hyperspec Custom Search Engine ID.
-   It first checks for a project-specific ID (if a default project
-   is set), then falls back to the default ID pathname.
-   Returns the pathname if found, otherwise NIL."
-  (or (let ((project (default-project)))
-        (when project
-          (probe-file (project-hyperspec-custom-search-engine-id-pathname project))))
-      (probe-file (default-hyperspec-custom-search-engine-id-pathname))))
-
-(defun blogger-api-key ()
-  "Retrieves the Blogger API key. It first attempts to read it from
-   the API key file (either project-specific or default), then falls back
-   to the BLOGGER_API_KEY environment variable.
-   Signals an error if no API key is found."
-  (or (let ((pathname (blogger-apikey-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "BLOGGER_API_KEY")
-      (error "No Blogger API key found. Set the environment variable BLOGGER_API_KEY or create a file at ~a."
-             (namestring (apikey-pathname)))))
-
-(defun gemini-api-key ()
-  "Retrieves the Google API key. It first attempts to read it from
-   the API key file (either project-specific or default), then falls back
-   to the GOOGLE_API_KEY environment variable.
-   Signals an error if no API key is found."
-  (or (let ((pathname (apikey-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "GOOGLE_API_KEY")
-      (error "No Google API key found. Set the environment variable GOOGLE_API_KEY or create a file at ~a."
-             (namestring (apikey-pathname)))))
-
-(defun search-engine-api-key ()
-  "Retrieves the Google Custom Search Engine API key. It first attempts to read it from
-   the CSE API key file (either project-specific or default), then falls back
-   to the GOOGLE_CSE_API_KEY environment variable.
-   Signals an error if no CSE API key is found."
-  (or (let ((pathname (custom-search-engine-apikey-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "GOOGLE_CSE_API_KEY")
-      (error "No Google Custom Search Engine API key found.  Set the environment variable GOOGLE_CSE_API_KEY or create file at ~a." (namestring (custom-search-engine-apikey-pathname)))))
-
-(defun blogger-blog-id ()
-  "Retrieves the Blogger blog ID. It first attempts to read it from
-   the blog ID file (either project-specific or default), then falls back
-   to the BLOG_ID environment variable.
-   Signals an error if no blog ID is found."
-  (or (let ((pathname (blogger-blog-id-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "BLOG_ID")
-      (error "No Blogger blog ID found.  Set the environment variable BLOG_ID or create file at ~a." (namestring (blogger-blog-id-pathname)))))
-
-(defun google-search-engine-id ()
-  "Retrieves the Google Custom Search Engine ID. It first attempts to read it from
-   the CSE ID file (either project-specific or default), then falls back
-   to the GOOGLE_CSE_ID environment variable.
-   Signals an error if no CSE ID is found."
-  (or (let ((pathname (custom-search-engine-id-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "GOOGLE_CSE_ID")
-      (error "No Google Custom Search Engine ID found.  Set the environment variable GOOGLE_CSE_ID or cerate file at ~a." (namestring (custom-search-engine-id-pathname)))))
-
-(defun hyperspec-search-engine-id ()
-  "Retrieves the Google Custom Search Engine ID. It first attempts to read it from
-   the Hyperspec CSE ID file (either project-specific or default), then falls back
-   to the HYPERSPEC_CSE_ID environment variable.
-   Signals an error if no Hyperspec CSE ID is found."
-  (or (let ((pathname (hyperspec-custom-search-engine-id-pathname)))
-        (and pathname
-             (with-open-file (stream pathname :direction :input)
-               (let ((line (read-line stream nil)))
-                 (when line
-                   (str:trim line))))))
-      (uiop:getenv "HYPERSPEC_CSE_ID")
-      (error "No Hyperspec Custom Search Engine ID found.  Set the environment variable HYPERSPEC_CSE_ID or cerate file at ~a." (namestring (hyperspec-custom-search-engine-id-pathname)))))
+  ;; Define functions to get the various API keys and IDs.
+  (define-configuration blogger-api-key blogger-apikey-pathname "BLOGGER_API_KEY")
+  (define-configuration blogger-blog-id blogger-blog-id-pathname "BLOG_ID")
+  (define-configuration gemini-api-key gemini-apikey-pathname "GEMINI_API_KEY")
+  (define-configuration google-search-engine-id custom-search-engine-id-pathname "GOOGLE_CSE_ID")
+  (define-configuration hyperspec-search-engine-id hyperspec-custom-search-engine-id-pathname "HYPERSPEC_CSE_ID")
+  (define-configuration search-engine-api-key custom-search-engine-apikey-pathname "GOOGLE_CSE_API_KEY"))

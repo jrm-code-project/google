@@ -7,6 +7,7 @@
                "dexador"
                "fold"
                "function"
+               "jsonx"
                "named-let"
                "series"
                "str"
