@@ -5,6 +5,7 @@
   :depends-on ("alexandria"
                "cl-json"
                "dexador"
+               "flexi-streams"
                "fold"
                "function"
                "jsonx"

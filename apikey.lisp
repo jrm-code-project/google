@@ -63,6 +63,10 @@
 ;;; GOOGLE_CSE_ID - Custom search engine ID for a Google Search
 ;;; HYPERSPEC_CSE_ID - Custom search engine ID for a Hyperspec search
 
+;;; Note: API keys are not cached.  They are read from the files each
+;;; time they are requested.  This is not a performance issue because
+;;; we are transmitting the credentials over the network anyway.
+
 (in-package "GOOGLE")
 
 (defun googleapis-pathname ()
@@ -98,13 +102,14 @@
              `(DEFUN ,(intern (concatenate 'string "PROJECT-" (symbol-name service) "-PATHNAME")
                               (find-package "GOOGLE"))
                   (PROJECT)
-                (MERGE-PATHNAMES (MAKE-PATHNAME :DIRECTORY
-                                                (LIST :RELATIVE PROJECT
-                                                      ,(str:join ""
-                                                                (map 'list
-                                                                     #'str:capitalize
-                                                                     (str:split "-" (symbol-name service))))))
-                                 (GOOGLEAPIS-PATHNAME)))))
+                (MERGE-PATHNAMES
+                 (MAKE-PATHNAME :DIRECTORY
+                                (LIST :RELATIVE PROJECT
+                                      ,(str:join ""
+                                                 (map 'list
+                                                      #'str:capitalize
+                                                      (str:split "-" (symbol-name service))))))
+                 (GOOGLEAPIS-PATHNAME)))))
 
   ;; Define functions to get the pathnames for various services within a project.
   (define-project-service-pathname :blogger)
