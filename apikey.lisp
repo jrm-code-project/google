@@ -82,9 +82,9 @@
   (define-default-pathname default-blogger-apikey-pathname "blogger-apikey")
   (define-default-pathname default-blogger-blog-id-pathname "blog-id")
   (define-default-pathname default-custom-search-engine-apikey-pathname "cse-apikey")
+  (define-default-pathname default-custom-search-engine-hyperspec-id-pathname "hyperspec-id")
   (define-default-pathname default-custom-search-engine-id-pathname "cse-id")
   (define-default-pathname default-gemini-apikey-pathname "gemini-apikey")
-  (define-default-pathname default-hyperspec-custom-search-engine-id-pathname "hyperspec-id")
   (define-default-pathname default-project-pathname "default-project"))
 
 (defun default-project ()
@@ -152,7 +152,7 @@
   (define-effective-pathname custom-search-engine-apikey-pathname)
   (define-effective-pathname custom-search-engine-id-pathname)
   (define-effective-pathname gemini-apikey-pathname)
-  (define-effective-pathname hyperspec-custom-search-engine-id-pathname))
+  (define-effective-pathname custom-search-engine-hyperspec-id-pathname))
 
 (macrolet ((define-configuration (name effective-pathname environment-varible)
              `(DEFUN ,name ()
@@ -173,5 +173,5 @@
   (define-configuration blogger-blog-id blogger-blog-id-pathname "BLOG_ID")
   (define-configuration gemini-api-key gemini-apikey-pathname "GEMINI_API_KEY")
   (define-configuration google-search-engine-id custom-search-engine-id-pathname "GOOGLE_CSE_ID")
-  (define-configuration hyperspec-search-engine-id hyperspec-custom-search-engine-id-pathname "HYPERSPEC_CSE_ID")
+  (define-configuration hyperspec-search-engine-id custom-search-engine-hyperspec-id-pathname "HYPERSPEC_CSE_ID")
   (define-configuration search-engine-api-key custom-search-engine-apikey-pathname "GOOGLE_CSE_API_KEY"))
