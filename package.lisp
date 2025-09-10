@@ -2,10 +2,9 @@
 
 (defpackage "GOOGLE"
   (:shadowing-import-from "FUNCTION" "COMPOSE")
-  (:shadowing-import-from "JSONX" "WITH-DECODER-JRM-SEMANTICS")
   (:shadowing-import-from "NAMED-LET" "LET" "NAMED-LAMBDA")
   (:shadowing-import-from "SERIES" "DEFUN" "FUNCALL" "LET*" "MULTIPLE-VALUE-BIND")
-  (:use "ALEXANDRIA" "CL" "FOLD" "FUNCTION" "NAMED-LET" "PROMISE" "SERIES")
+  (:use "ALEXANDRIA" "CL" "FOLD" "FUNCTION" "JSONX" "NAMED-LET" "PROMISE" "SERIES")
   (:export
    "DEFAULT-PROJECT"
    "GEMINI-API-KEY"

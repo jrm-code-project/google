@@ -69,6 +69,12 @@
 
 (in-package "GOOGLE")
 
+(defun read-config-value (path)
+  "Reads and trims a single value from a file path. Returns NIL if file is unreadable."
+  (handler-case
+      (string-trim '(#\Space #\Tab #\Newline #\Return) (uiop:read-file-string path))
+    (error () nil)))
+
 (defun googleapis-pathname ()
   "Returns the base pathname for Google APIs configuration files,
    typically located in the user's XDG config directory."
@@ -94,7 +100,7 @@
   (let ((pathname (default-project-pathname)))
     (when (probe-file pathname)
       (with-open-file (stream pathname :direction :input)
-        (let ((line (read-line stream nil)))
+        (let ((line (read-line stream nil nil)))
           (when line
             (str:trim line)))))))
 
