@@ -21,15 +21,23 @@
 (defun google-get (uri api-key)
   "Perform an HTTP GET of a JSON object from the Google API."
   (decode-google-json-response
-   (dexador:get uri
-                :headers `(("Accept" . "application/json")
-                           ("x-goog-api-key" . ,api-key)))))
+   (multiple-value-bind (body status headers uri stream)
+       (dexador:get uri
+                    :headers `(("Accept" . "application/json")
+                               ("x-goog-api-key" . ,api-key)))
+     (declare (ignore status headers uri stream))
+     ;; (format t "~&Headers: ~s~%" (dehashify headers))
+     body)))
 
 (defun google-post (uri api-key payload)
   "Perform an HTTP POST of a JSON object to the Google API."
   (decode-google-json-response
-   (dexador:post uri
-                 :headers `(("Accept" . "application/json")
-                            ("Content-Type" . "application/json")
-                            ("x-goog-api-key" . ,api-key))
-                 :content (cl-json:encode-json-to-string payload))))
+   (multiple-value-bind (body status headers uri stream)
+       (dexador:post uri
+                     :headers `(("Accept" . "application/json")
+                                ("Content-Type" . "application/json")
+                                ("x-goog-api-key" . ,api-key))
+                     :content (cl-json:encode-json-to-string payload))
+     (declare (ignore status headers uri stream))
+     ;; (format t "~&Headers: ~s~%" (dehashify headers))
+     body)))
