@@ -10,6 +10,7 @@
                "function"
                "jsonx"
                "named-let"
+               "promise"
                "series"
                "str"
                )
